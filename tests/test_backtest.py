@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from financial_sentiment.backtest import align_signals, build_daily_signals, prepare_market_data
 
@@ -17,5 +18,5 @@ def test_daily_signal_uses_mean_score_and_count():
     )
     signals = build_daily_signals(news)
     assert signals.iloc[0]["article_count"] == 2
-    assert signals.iloc[0]["sentiment_score"] == 0.3
+    assert signals.iloc[0]["sentiment_score"] == pytest.approx(0.3)
 
