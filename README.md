@@ -1,28 +1,51 @@
-# 📈 Financial Sentiment Analysis Pipeline
+# Financial News Sentiment Backtester
 
-## 🎯 Project Overview
-Can we predict stock volatility using AI? This project built an end-to-end data pipeline to analyze the relationship between **Tesla (TSLA)** stock prices and global news sentiment during the volatile **March 2026** news cycle.
+An end-to-end NLP project that tests whether financial-news sentiment contains information about **future** stock returns and volatility. It uses FinBERT for scoring, GDELT for historical headline retrieval, yfinance for market data, and a deliberately leakage-safe backtest.
 
+## Why this is different from the original notebook
 
+- FinBERT is used only to score text; it is not treated as a data source.
+- Historical backtests use GDELT instead of a one-month NewsAPI window.
+- A signal from day *t* is joined to the next available trading session, rather than correlated with the already-known same-day close.
+- The output includes directional precision and return/volatility correlations, not a single misleading price-level correlation.
+- NewsAPI is supported only for live/recent data through `NEWSAPI_KEY`; secrets are never committed.
 
-## 🛠️ The Tech Stack
-* **Language:** Python 3.10
-* **AI Model:** FinBERT (HuggingFace Transformers)
-* **Data Sources:** NewsAPI (Headlines), yfinance (Market Data)
-* **Analysis:** Pandas, Matplotlib, Scipy (Pearson Correlation)
+## Quick start
 
-## 🔄 Data Analyst Lifecycle
-1. **Data Ingestion:** Automated extraction of 30 days of market data and news headlines via REST APIs.
-2. **Sentiment Engineering:** Used a domain-specific BERT model (FinBERT) to classify unstructured text into Positive, Negative, and Neutral scores.
-3. **Data Integration:** Merged time-series price data with aggregated daily sentiment scores.
-4. **Statistical Validation:** Calculated Pearson’s $r$ and P-values to determine the reliability of the correlation.
+```bash
+python -m venv .venv
+# Windows: .venv\\Scripts\\activate
+pip install -e '.[dev]'
+financial-sentiment --ticker TSLA --query Tesla --start 2025-01-01 --end 2025-06-30
+```
 
-## 📊 Results & Insights
-* **Correlation found:** $r = 0.36$ (Moderate Positive)
-* **Key Insight:** During the Tesla "FSD Probe" in March 2026, negative sentiment spikes preceded price drops with a 24-hour lag.
-* **Conclusion:** While NVIDIA showed low sensitivity to daily news, Tesla's "High-Beta" nature makes it a prime candidate for sentiment-based risk modeling.
+The command writes reproducible inputs and outputs to `artifacts/`:
 
-## 🚀 How to Run
-1. Clone this repo.
-2. Install requirements: `pip install yfinance transformers pandas matplotlib`
-3. Run the `.ipynb` notebook in Google Colab or Jupyter.
+- `scored_news.csv` — raw historical headlines plus FinBERT outputs
+- `aligned_backtest.csv` — next-session outcomes joined to prior available signals
+- `metrics.json` — summary evaluation metrics
+
+## API
+
+```bash
+uvicorn financial_sentiment.api:app --reload
+curl http://127.0.0.1:8000/health
+```
+
+`POST /score` accepts `{"headlines":["Tesla reports stronger margins"]}` and returns FinBERT scores.
+
+## Validation principles
+
+This is an exploratory backtest, not investment advice. Evaluate multiple tickers and non-overlapping time windows, compare against a zero-signal baseline, and report uncertainty before making predictive claims. The project does not use a signal published after the market outcome it is evaluated against.
+
+## Development
+
+```bash
+ruff check src tests
+pytest
+docker build -t financial-sentiment .
+docker run -p 8000:8000 financial-sentiment
+```
+
+GitHub Actions runs linting and unit tests on every pull request.
+
