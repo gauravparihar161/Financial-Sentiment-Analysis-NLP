@@ -6,7 +6,6 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-
 LABEL_SCORE = {"positive": 1.0, "neutral": 0.0, "negative": -1.0}
 
 
