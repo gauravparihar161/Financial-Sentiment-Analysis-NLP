@@ -5,8 +5,8 @@ GDELT is used for historical retrieval; NewsAPI is deliberately limited to live/
 
 from __future__ import annotations
 
-from datetime import date
 import os
+from datetime import date
 
 import httpx
 import pandas as pd
